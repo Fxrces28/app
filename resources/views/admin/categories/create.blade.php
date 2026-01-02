@@ -14,24 +14,9 @@
                 <div class="mb-3">
                     <label for="name" class="form-label">Название *</label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                           id="name" name="name" value="{{ old('name') }}" required>
+                           id="name" name="name" value="{{ old('name') }}" required
+                           placeholder="Например: Для сна, Утренние, Для начинающих">
                     @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <div class="mb-3">
-                    <label for="type" class="form-label">Тип категории *</label>
-                    <select class="form-select @error('type') is-invalid @enderror" 
-                            id="type" name="type" required>
-                        <option value="">Выберите тип</option>
-                        @foreach($types as $key => $label)
-                            <option value="{{ $key }}" {{ old('type') == $key ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('type')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

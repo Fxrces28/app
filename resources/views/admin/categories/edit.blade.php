@@ -15,25 +15,9 @@
                 <div class="mb-3">
                     <label for="name" class="form-label">Название *</label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                           id="name" name="name" value="{{ old('name', $category->name) }}" required>
+                           id="name" name="name" value="{{ old('name', $category->name) }}" required
+                           placeholder="Например: Для сна, Утренние, Для начинающих">
                     @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-                
-                <div class="mb-3">
-                    <label for="type" class="form-label">Тип категории *</label>
-                    <select class="form-select @error('type') is-invalid @enderror" 
-                            id="type" name="type" required>
-                        <option value="">Выберите тип</option>
-                        @foreach($types as $key => $label)
-                            <option value="{{ $key }}" 
-                                {{ old('type', $category->type) == $key ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('type')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -52,21 +36,4 @@
         </div>
     </div>
 </div>
-
-<form id="deleteForm" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
-@endsection
-
-@section('scripts')
-<script>
-function confirmDelete(id, name) {
-    if (confirm(`Вы уверены, что хотите удалить категорию "${name}"?\n\nЭто может повлиять на медитации, связанные с этой категорией.`)) {
-        const form = document.getElementById('deleteForm');
-        form.action = '/admin/categories/' + id;
-        form.submit();
-    }
-}
-</script>
 @endsection

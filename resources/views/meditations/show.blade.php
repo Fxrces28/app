@@ -91,6 +91,17 @@
                             @if(auth()->user()->hasActiveSubscription())
                                 <div class="alert alert-success">
                                     <i class="fas fa-check-circle"></i> У вас есть активная подписка
+                                    @php
+                                        $subscriptionEndsAt = auth()->user()->getSubscriptionEndsAt();
+                                    @endphp
+                                    @if($subscriptionEndsAt)
+                                        <div class="mt-2">
+                                            <small>
+                                                Подписка действует до: 
+                                                <strong>{{ $subscriptionEndsAt->format('d.m.Y H:i') }}</strong>
+                                            </small>
+                                        </div>
+                                    @endif
                                 </div>
                             @else
                                 <div class="alert alert-warning">

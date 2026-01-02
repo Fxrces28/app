@@ -39,6 +39,15 @@
                             </ul>
                         </div>
                     @endif
+                    
+                    @if(auth()->user()->hasActiveSubscription())
+                    <div class="alert alert-info">
+                        <h5>У вас уже есть активная подписка</h5>
+                        <p>
+                            Текущая подписка действует до: <strong>{{ auth()->user()->getSubscriptionEndsAt()->format('d.m.Y H:i') }}</strong>. При оплате нового тарифа, ваша подписка будет продлена от текущей даты окончания.
+                        </p>
+                    </div>
+                    @endif
 
                     <form method="POST" action="{{ route('payment.create', $plan->id) }}" id="payment-form">
                         @csrf

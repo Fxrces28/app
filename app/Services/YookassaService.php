@@ -36,56 +36,97 @@ class YookassaService
     }
 
     public function createPayment(User $user, SubscriptionPlan $plan, array $options = [])
-    {
-        try {
-            Log::info('=== START CREATING PAYMENT ===');
-            Log::info('User: ' . $user->id . ', Plan: ' . $plan->id . ', Price: ' . $plan->price);
+{
+    try {
+        Log::info('=== START CREATING PAYMENT ===');
+        Log::info('User: ' . $user->id . ', Plan: ' . $plan->id . ', Price: ' . $plan->price);
 
+        // Проверяем, есть ли активная подписка
+        $existingSubscription = $user->subscription()->where('is_active', true)->first();
+        $existingPayment = Payment::where('user_id', $user->id)
+            ->where('status', 'succeeded')
+            ->where('subscription_ends_at', '>', now())
+            ->latest()
+            ->first();
+
+        // Если есть активная подписка, продлеваем ее
+        $currentEndsAt = null;
+        if ($existingSubscription && $existingSubscription->ends_at > now()) {
+            $currentEndsAt = $existingSubscription->ends_at;
+            Log::info('Found active subscription, current ends_at: ' . $currentEndsAt);
+        } elseif ($existingPayment && $existingPayment->subscription_ends_at > now()) {
+            $currentEndsAt = $existingPayment->subscription_ends_at;
+            Log::info('Found active payment, current ends_at: ' . $currentEndsAt);
+        }
+
+        // Рассчитываем новую дату окончания
+        $durationToAdd = match($plan->duration) {
+            'month' => now()->addMonth(),
+            '3months' => now()->addMonths(3),
+            'year' => now()->addYear(),
+            'lifetime' => now()->addYears(100),
+            '6months' => now()->addMonths(6),
+            default => now()->addMonth(),
+        };
+
+        // Если есть текущая подписка, продлеваем от текущей даты окончания
+        if ($currentEndsAt) {
             $subscriptionEndsAt = match($plan->duration) {
-                        'month' => now()->addMonth(),
-                        '3months' => now()->addMonths(3),
-                        'year' => now()->addYear(),
-                        'lifetime' => now()->addYears(100),
-                        default => now()->addMonth(),
-                    };
+                'month' => $currentEndsAt->copy()->addMonth(),
+                '3months' => $currentEndsAt->copy()->addMonths(3),
+                'year' => $currentEndsAt->copy()->addYear(),
+                'lifetime' => $currentEndsAt->copy()->addYears(100),
+                '6months' => $currentEndsAt->copy()->addMonths(6),
+                default => $currentEndsAt->copy()->addMonth(),
+            };
+            Log::info('Extending subscription from: ' . $currentEndsAt . ' to: ' . $subscriptionEndsAt);
+        } else {
+            // Нет активной подписки - начинаем с сегодня
+            $subscriptionEndsAt = $durationToAdd;
+            Log::info('Starting new subscription, ends_at: ' . $subscriptionEndsAt);
+        }
 
-            $payment = Payment::create([
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'subscription_plan_id' => $plan->id,
+            'amount' => $plan->price,
+            'currency' => 'RUB',
+            'description' => "Подписка: {$plan->name}" . ($currentEndsAt ? " (продление)" : ""),
+            'status' => 'pending',
+            'metadata' => [
                 'user_id' => $user->id,
-                'subscription_plan_id' => $plan->id,
-                'amount' => $plan->price,
+                'user_email' => $user->email,
+                'plan_id' => $plan->id,
+                'plan_name' => $plan->name,
+                'plan_duration' => $plan->duration,
+                'is_extension' => $currentEndsAt ? true : false,
+                'current_ends_at' => $currentEndsAt ? $currentEndsAt->toDateTimeString() : null,
+                'new_ends_at' => $subscriptionEndsAt->toDateTimeString(),
+            ],
+            'expires_at' => now()->addHours(24),
+            'subscription_ends_at' => $subscriptionEndsAt,
+        ]);
+
+        Log::info('Payment created in DB: ' . $payment->id);
+
+        $paymentData = [
+            'amount' => [
+                'value' => number_format($plan->price, 2, '.', ''),
                 'currency' => 'RUB',
-                'description' => "Подписка: {$plan->name}",
-                'status' => 'pending',
-                'metadata' => [
-                    'user_id' => $user->id,
-                    'user_email' => $user->email,
-                    'plan_id' => $plan->id,
-                    'plan_name' => $plan->name,
-                    'plan_duration' => $plan->duration,
-                ],
-                'expires_at' => now()->addHours(24),
-                'subscription_ends_at' => $subscriptionEndsAt,
-            ]);
-
-            Log::info('Payment created in DB: ' . $payment->id);
-
-            $paymentData = [
-                'amount' => [
-                    'value' => number_format($plan->price, 2, '.', ''),
-                    'currency' => 'RUB',
-                ],
-                'confirmation' => [
-                    'type' => 'redirect',
-                    'return_url' => url('/payment/success'),
-                ],
-                'capture' => true,
-                'description' => "Подписка: {$plan->name}",
-                'metadata' => [
-                    'payment_id' => $payment->id,
-                    'user_id' => $user->id,
-                    'plan_id' => $plan->id,
-                ],
-            ];
+            ],
+            'confirmation' => [
+                'type' => 'redirect',
+                'return_url' => url('/payment/success'),
+            ],
+            'capture' => true,
+            'description' => "Подписка: {$plan->name}" . ($currentEndsAt ? " (продление)" : ""),
+            'metadata' => [
+                'payment_id' => $payment->id,
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'is_extension' => $currentEndsAt ? true : false,
+            ],
+        ];
 
             if (config('yookassa.mode') !== 'sandbox') {
                 $paymentData['receipt'] = [
@@ -167,16 +208,16 @@ class YookassaService
             }
 
         } catch (\Exception $e) {
-            Log::error('Payment creation failed: ' . $e->getMessage());
-            Log::error('Trace: ' . $e->getTraceAsString());
-            
-            return [
-                'success' => false,
-                'error' => 'Ошибка при создании платежа: ' . $e->getMessage(),
-                'debug' => $e->getMessage(),
-            ];
-        }
+        Log::error('Payment creation failed: ' . $e->getMessage());
+        Log::error('Trace: ' . $e->getTraceAsString());
+        
+        return [
+            'success' => false,
+            'error' => 'Ошибка при создании платежа: ' . $e->getMessage(),
+            'debug' => $e->getMessage(),
+        ];
     }
+}
 
 
     public function getPaymentInfo($paymentId)
@@ -249,25 +290,37 @@ class YookassaService
     }
 
     private function activateSubscription(Payment $payment)
-    {
-        try {
-            $user = $user = $payment->user;
-            $plan = $plan = $payment->plan;
+{
+    try {
+        $user = $payment->user;
+        $plan = $payment->plan;
+        
+        // Получаем дату окончания из платежа (уже рассчитана при создании)
+        $endsAt = $payment->subscription_ends_at;
+        
+        Log::info('Activating subscription for payment: ' . $payment->id, [
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'ends_at' => $endsAt,
+            'is_extension' => $payment->metadata['is_extension'] ?? false
+        ]);
 
-            $endsAt = $payment->subscription_ends_at ?? match($plan->duration) {
-                'month' => now()->addMonth(),
-                '3months' => now()->addMonths(3),
-                'year' => now()->addYear(),
-                'lifetime' => now()->addYears(100),
-                default => now()->addMonth(),
-            };
+        // Находим существующую активную подписку
+        $existingSubscription = $user->subscription()
+            ->where('is_active', true)
+            ->first();
 
-            Log::info('Activating subscription for payment: ' . $payment->id, [
-                'user_id' => $user->id,
-                'plan_id' => $plan->id,
-                'ends_at' => $endsAt
+        if ($existingSubscription) {
+            // Обновляем существующую подписку
+            $existingSubscription->update([
+                'ends_at' => $endsAt,
+                'is_active' => true,
+                'status' => 'active',
+                'plan_id' => $plan->id, // Меняем план если нужно
             ]);
-
+            Log::info("Subscription extended for user {$user->id}, new ends_at: {$endsAt}");
+        } else {
+            // Создаем новую подписку
             \App\Models\Subscription::create([
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
@@ -277,20 +330,22 @@ class YookassaService
                 'status' => 'active',
                 'payment_id' => $payment->yookassa_payment_id,
             ]);
-
-
-            $user->update([
-                'subscription_active' => true,
-                'subscription_ends_at' => $endsAt,
-                'current_plan_id' => $plan->id,
-            ]);
-
-            Log::info("Subscription activated for user {$user->id}, plan {$plan->id}");
-
-        } catch (\Exception $e) {
-            Log::error('Subscription activation failed: ' . $e->getMessage());
-            Log::error('Trace: ' . $e->getTraceAsString());
-            throw $e;
+            Log::info("New subscription created for user {$user->id}, ends_at: {$endsAt}");
         }
+
+        // Обновляем данные пользователя
+        $user->update([
+            'subscription_active' => true,
+            'subscription_ends_at' => $endsAt,
+            'current_plan_id' => $plan->id,
+        ]);
+
+        Log::info("User {$user->id} subscription updated, ends_at: {$endsAt}");
+
+    } catch (\Exception $e) {
+        Log::error('Subscription activation failed: ' . $e->getMessage());
+        Log::error('Trace: ' . $e->getTraceAsString());
+        throw $e;
     }
+}
 }

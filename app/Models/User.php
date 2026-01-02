@@ -35,20 +35,20 @@ class User extends Authenticatable
     }
 
     public function hasActiveSubscription(): bool
-    {
-        $hasActivePayment = Payment::where('user_id', $this->id)
-            ->where('status', 'succeeded')
-            ->where('subscription_ends_at', '>', now())
-            ->exists();
-        
-        if (!$hasActivePayment) {
-            $hasActivePayment = $this->subscription && 
-                            $this->subscription->is_active && 
-                            $this->subscription->ends_at > now();
-        }
-        
-        return $hasActivePayment || $this->isAdmin();
+{
+    // Проверяем активную подписку
+    if ($this->subscription && $this->subscription->is_active && $this->subscription->ends_at > now()) {
+        return true;
     }
+    
+    // Проверяем активные платежи
+    $hasActivePayment = Payment::where('user_id', $this->id)
+        ->where('status', 'succeeded')
+        ->where('subscription_ends_at', '>', now())
+        ->exists();
+    
+    return $hasActivePayment || $this->isAdmin();
+}
 
     public function canAccessPremiumContent(): bool
     {
@@ -64,5 +64,21 @@ class User extends Authenticatable
     {
         return $this->role === 'user';
     }
+    public function getSubscriptionEndsAt()
+{
+    // Сначала проверяем активную подписку
+    if ($this->subscription && $this->subscription->is_active) {
+        return $this->subscription->ends_at;
+    }
+    
+    // Если нет подписки, проверяем активные платежи
+    $payment = Payment::where('user_id', $this->id)
+        ->where('status', 'succeeded')
+        ->where('subscription_ends_at', '>', now())
+        ->latest()
+        ->first();
+        
+    return $payment ? $payment->subscription_ends_at : null;
+}
     
 }

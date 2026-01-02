@@ -55,29 +55,39 @@ class PublicMeditationController extends Controller
     }
 
     public function show(Meditation $meditation)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
+    
+    if ($meditation->is_premium) {
+        if (!$user) {
+
+            return redirect()->route('subscriptions.plans')
+                ->with('error', 'Для доступа к этой медитации требуется подписка. Зарегистрируйтесь или войдите в аккаунт.')
+                ->with('redirect_to', route('meditations.show', $meditation));
+            
+        }
         
-        if ($meditation->is_premium && !$user->canAccessPremiumContent()) {
+        if (!$user->canAccessPremiumContent()) {
             return redirect()->route('subscriptions.plans')
                 ->with('error', 'Для доступа к этой медитации требуется подписка')
                 ->with('redirect_to', route('meditations.show', $meditation));
         }
-    
-        $meditation->increment('play_count');
-        
-        $relatedMeditations = Meditation::where('category_id', $meditation->category_id)
-            ->where('id', '!=', $meditation->id)
-            ->where(function($query) {
-                if (!auth()->check() || !auth()->user()->hasActiveSubscription()) {
-                    $query->where('is_premium', false);
-                }
-            })
-            ->limit(4)
-            ->get();
-            
-        return view('meditations.show', compact('meditation', 'relatedMeditations'));
     }
+    
+    $meditation->increment('play_count');
+    
+    $relatedMeditations = Meditation::where('category_id', $meditation->category_id)
+        ->where('id', '!=', $meditation->id)
+        ->where(function($query) use ($user) {
+            if (!$user || !$user->hasActiveSubscription()) {
+                $query->where('is_premium', false);
+            }
+        })
+        ->limit(4)
+        ->get();
+        
+    return view('meditations.show', compact('meditation', 'relatedMeditations'));
+}
 
     public function edit(string $id)
     {

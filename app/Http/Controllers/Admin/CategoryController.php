@@ -17,27 +17,13 @@ class CategoryController extends Controller
     
     public function create()
     {
-        $types = [
-            'sleep' => 'Для сна',
-            'morning' => 'Утренние',
-            'focus' => 'На сосредоточение',
-            'stress_relief' => 'На снятие стресса',
-            'beginner' => 'Для начинающих',
-            'advanced' => 'Продвинутые',
-            'emotions' => 'На управление эмоциями',
-            'body' => 'Тело и дыхание',
-            'work' => 'Работа и продуктивность',
-            'general' => 'Общие'
-        ];
-        
-        return view('admin.categories.create', compact('types'));
+        return view('admin.categories.create');
     }
     
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'type' => 'required|string|max:50',
+            'name' => 'required|string|max:100|unique:categories,name',
         ]);
         
         $validated['slug'] = Str::slug($validated['name']);
@@ -50,27 +36,13 @@ class CategoryController extends Controller
     
     public function edit(Category $category)
     {
-        $types = [
-            'sleep' => 'Для сна',
-            'morning' => 'Утренние',
-            'focus' => 'На сосредоточение',
-            'stress_relief' => 'На снятие стресса',
-            'beginner' => 'Для начинающих',
-            'advanced' => 'Продвинутые',
-            'emotions' => 'На управление эмоциями',
-            'body' => 'Тело и дыхание',
-            'work' => 'Работа и продуктивность',
-            'general' => 'Общие'
-        ];
-        
-        return view('admin.categories.edit', compact('category', 'types'));
+        return view('admin.categories.edit', compact('category'));
     }
     
     public function update(Request $request, Category $category)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'type' => 'required|string|max:50',
+            'name' => 'required|string|max:100|unique:categories,name,' . $category->id,
         ]);
         
         $validated['slug'] = Str::slug($validated['name']);
