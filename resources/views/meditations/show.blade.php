@@ -145,25 +145,34 @@
                             Категория: {{ $meditation->category->name ?? 'Не указана' }}
                         </li>
                         <br>
-                        <div class="mt-2">
-                            @if(auth()->user()->hasFavorite($meditation))
-                                <button class="btn btn-sm btn-danger remove-favorite-btn" 
-                                        data-meditation-id="{{ $meditation->id }}"
-                                        data-is-favorite="true"
-                                        title="Удалить из избранного">
-                                    <i class="fas fa-heart"></i>
-                                    <span class="ms-1">В избранном</span>
-                                </button>
-                            @else
-                                <button class="btn btn-sm btn-outline-danger add-favorite-btn" 
-                                        data-meditation-id="{{ $meditation->id }}"
-                                        data-is-favorite="false"
-                                        title="Добавить в избранное">
-                                    <i class="far fa-heart"></i>
-                                    <span class="ms-1">В избранное</span>
-                                </button>
-                            @endif
-                        </div>
+<div class="mt-2">
+    @auth
+        @if(auth()->user()->hasFavorite($meditation))
+            <button class="btn btn-sm btn-danger remove-favorite-btn" 
+                    data-meditation-id="{{ $meditation->id }}"
+                    data-is-favorite="true"
+                    title="Удалить из избранного">
+                <i class="fas fa-heart"></i>
+                <span class="ms-1">В избранном</span>
+            </button>
+        @else
+            <button class="btn btn-sm btn-outline-danger add-favorite-btn" 
+                    data-meditation-id="{{ $meditation->id }}"
+                    data-is-favorite="false"
+                    title="Добавить в избранное">
+                <i class="far fa-heart"></i>
+                <span class="ms-1">В избранное</span>
+            </button>
+        @endif
+    @else
+        <button class="btn btn-sm btn-outline-danger" 
+                title="Для добавления в избранное требуется авторизация"
+                onclick="window.location.href='{{ route('login') }}'">
+            <i class="far fa-heart"></i>
+            <span class="ms-1">В избранное</span>
+        </button>
+    @endauth
+</div>
                     </ul>
                 </div>
             </div>
