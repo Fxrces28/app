@@ -66,7 +66,7 @@
                         </form>
                     @else
                         <a href="{{ route('payment.checkout', $plan) }}" class="btn btn-primary w-100">
-                            <i class="fas fa-shopping-cart"></i> Выбрать
+                            <i class="fas fa-shopping-cart"></i> Купить
                         </a>
                     @endif
                 </div>

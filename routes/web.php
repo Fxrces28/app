@@ -6,6 +6,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicMeditationController;
 use App\Http\Controllers\PublicSubscriptionController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\FavoriteController;
 
 require __DIR__.'/auth.php';
 /*
@@ -41,6 +42,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class);
     Route::resource('tags', \App\Http\Controllers\Admin\TagController::class);
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/favorites/toggle', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
+    Route::get('/favorites/list', [FavoriteController::class, 'list'])->name('favorites.list');
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+});
+
 
 Route::middleware('auth')->prefix('payment')->name('payment.')->group(function () {
     Route::get('/checkout/{plan}', [PaymentController::class, 'checkout'])->name('checkout');

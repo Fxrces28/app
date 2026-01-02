@@ -155,4 +155,9 @@ class MeditationController extends Controller
                 ->with('error', 'Ошибка при удаления: ' . $e->getMessage());
         }
     }
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites')
+                    ->withTimestamps();
+    }
 }

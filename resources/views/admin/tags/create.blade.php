@@ -43,29 +43,10 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const nameInput = document.getElementById('name');
-    const previewTag = document.getElementById('preview-tag');
-    const previewSlug = document.getElementById('preview-slug');
-    
-    nameInput.addEventListener('input', function() {
-        const name = this.value.trim();
-        
-        if (name) {
-            previewTag.textContent = name;
-            previewSlug.textContent = name.toLowerCase()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/--+/g, '-');
-        } else {
-            previewTag.textContent = 'Название тега';
-            previewSlug.textContent = 'nazvanie-tega';
-        }
-    });
-    
     document.querySelectorAll('.badge.bg-light').forEach(badge => {
         badge.addEventListener('click', function() {
+            const nameInput = document.getElementById('name');
             nameInput.value = this.textContent.trim();
-            nameInput.dispatchEvent(new Event('input'));
         });
     });
 });

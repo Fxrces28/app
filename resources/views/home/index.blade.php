@@ -14,10 +14,10 @@
             </p>
             <div class="mt-4">
                 <a href="{{ route('meditations.index') }}" class="btn btn-light btn-lg me-2">
-                    <i class="fas fa-headphones"></i> Начать медитацию
+                    Начать медитацию
                 </a>
                 <a href="{{ route('subscriptions.plans') }}" class="btn btn-outline-light btn-lg">
-                    <i class="fas fa-crown"></i> Выбрать тариф
+                    Выбрать тариф
                 </a>
             </div>
         </div>
@@ -106,10 +106,10 @@
                             @endforeach
                         </ul>
                     @endif
-                </div>
+                </div>  
                 <div class="card-footer">
                     <a href="{{ route('subscriptions.plans') }}" class="btn btn-primary w-100">
-                        <i class="fas fa-shopping-cart"></i> Выбрать
+                        <i class="fas fa-shopping-cart"></i> Купить
                     </a>
                 </div>
             </div>

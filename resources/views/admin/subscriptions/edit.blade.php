@@ -162,75 +162,6 @@
 
 @section('scripts')
 <script>
-document.getElementById('name').addEventListener('input', function() {
-    const slugField = document.getElementById('slug');
-    if (!slugField.value) {
-        const name = this.value.toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/--+/g, '-');
-        slugField.value = name;
-        
-        document.getElementById('preview-name').textContent = this.value || '{{ $subscription->name }}';
-    }
-});
-
-document.getElementById('description').addEventListener('input', function() {
-    document.getElementById('preview-description').textContent = this.value || 'Описание отсутствует';
-});
-
-document.getElementById('price').addEventListener('input', function() {
-    const price = parseFloat(this.value) || 0;
-    const priceElement = document.getElementById('preview-price');
-    if (price === 0) {
-        priceElement.textContent = 'Бесплатно';
-    } else {
-        priceElement.textContent = price.toLocaleString('ru-RU', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }) + ' ₽';
-    }
-});
-
-document.getElementById('duration').addEventListener('change', function() {
-    const durations = {
-        'month': 'в месяц',
-        '6months': 'на 6 месяцев',
-        'year': 'в год'
-    };
-    document.getElementById('preview-duration').textContent = durations[this.value] || '';
-});
-
-document.getElementById('features').addEventListener('input', function() {
-    const featuresContainer = document.getElementById('preview-features');
-    const features = this.value.split('\n').filter(f => f.trim() !== '');
-    
-    if (features.length > 0) {
-        let html = '<h6>Включено:</h6><ul class="list-unstyled">';
-        features.forEach(feature => {
-            html += `<li><i class="fas fa-check text-success me-2"></i>${feature.trim()}</li>`;
-        });
-        html += '</ul>';
-        featuresContainer.innerHTML = html;
-    } else {
-        featuresContainer.innerHTML = '';
-    }
-});
-
-document.getElementById('is_popular').addEventListener('change', function() {
-    const badge = document.getElementById('preview-popular');
-    if (this.checked) {
-        if (!badge) {
-            const durationElement = document.getElementById('preview-duration');
-            const badgeHtml = '<span class="badge bg-warning mt-2" id="preview-popular">' +
-                             '<i class="fas fa-crown"></i> Популярный</span>';
-            durationElement.insertAdjacentHTML('afterend', badgeHtml);
-        }
-    } else if (badge) {
-        badge.remove();
-    }
-});
-
 function confirmDelete(id, name) {
     if (confirm(`Вы уверены, что хотите удалить тарифный план "${name}"?\n\nЭто действие удалит все связанные активные подписки пользователей!`)) {
         const form = document.getElementById('deleteForm');
@@ -238,13 +169,6 @@ function confirmDelete(id, name) {
         form.submit();
     }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('name').dispatchEvent(new Event('input'));
-    document.getElementById('description').dispatchEvent(new Event('input'));
-    document.getElementById('price').dispatchEvent(new Event('input'));
-    document.getElementById('features').dispatchEvent(new Event('input'));
-});
 </script>
 @endsection
 

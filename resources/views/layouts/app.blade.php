@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Твое состояние - @yield('title')</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     @yield('styles')
@@ -25,7 +22,6 @@
     </style>
 </head>
 <body>
-
     <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <div class="container">
             <a class="navbar-brand" href="{{ route('home') }}">
@@ -68,16 +64,22 @@
                                 @if(Auth::user()->role === 'admin')
                                     <li>
                                         <a class="dropdown-item" href="{{ route('admin.dashboard') }}">
-                                             Админ-панель
+                                            Админ-панель
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                 @endif
                                 <li>
+                                    <a class="dropdown-item" href="{{ route('favorites.index') }}">
+                                        Избранное
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" class="dropdown-item">
-                                             Выйти
+                                            Выйти
                                         </button>
                                     </form>
                                 </li>
@@ -118,6 +120,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     @yield('scripts')
 </body>
 </html>

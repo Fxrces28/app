@@ -44,7 +44,14 @@
                     <div class="alert alert-info">
                         <h5>У вас уже есть активная подписка</h5>
                         <p>
-                            Текущая подписка действует до: <strong>{{ auth()->user()->getSubscriptionEndsAt()->format('d.m.Y H:i') }}</strong>. При оплате нового тарифа, ваша подписка будет продлена от текущей даты окончания.
+                            @php
+                                $subscriptionEndsAt = auth()->user()->getSubscriptionEndsAt();
+                            @endphp
+                            
+                            @if($subscriptionEndsAt)
+                                Текущая подписка действует до: <strong>{{ $subscriptionEndsAt->format('d.m.Y H:i') }}</strong>.
+                            @endif
+                            При оплате нового тарифа, ваша подписка будет продлена от текущей даты окончания.
                         </p>
                     </div>
                     @endif

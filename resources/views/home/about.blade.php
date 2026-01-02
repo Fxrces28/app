@@ -36,7 +36,7 @@
             </p>
         </div>
     </div>
-
+    <!--
     <h2 class="text-center mb-5">Ключевые функции</h2>
     <div class="row g-4 mb-5">
         @foreach($features as $feature)
@@ -52,35 +52,7 @@
             </div>
         </div>
         @endforeach
-    </div>
-
-    <div class="row align-items-center mb-5">
-        <div class="col-lg-6">
-            <h2 class="mb-4">Для кого создано приложение?</h2>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item border-0">
-                    <i class="fas fa-check text-success me-2"></i>
-                    Для людей с нарушениями сна и бессонницей
-                </li>
-                <li class="list-group-item border-0">
-                    <i class="fas fa-check text-success me-2"></i>
-                    Для тех, кто испытывает стресс и тревожность
-                </li>
-                <li class="list-group-item border-0">
-                    <i class="fas fa-check text-success me-2"></i>
-                    Для желающих улучшить качество сна
-                </li>
-                <li class="list-group-item border-0">
-                    <i class="fas fa-check text-success me-2"></i>
-                    Для специалистов-психологов
-                </li>
-                <li class="list-group-item border-0">
-                    <i class="fas fa-check text-success me-2"></i>
-                    Для всех, кто заботится о ментальном здоровье
-                </li>
-            </ul>
-        </div>
-    </div>
+    </div>-->
 
     <h2 class="text-center mb-4">Что говорят пользователи</h2>
     <div class="row g-4 mb-5">
@@ -100,6 +72,34 @@
         </div>
         @endforeach
     </div>
+
+    <div class="row align-items-center mb-5">
+            <div class="col-lg-6">
+                <h2 class="mb-4">Для кого создано приложение?</h2>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item border-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Для людей с нарушениями сна и бессонницей
+                    </li>
+                    <li class="list-group-item border-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Для тех, кто испытывает стресс и тревожность
+                    </li>
+                    <li class="list-group-item border-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Для желающих улучшить качество сна
+                    </li>
+                    <li class="list-group-item border-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Для специалистов-психологов
+                    </li>
+                    <li class="list-group-item border-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Для всех, кто заботится о ментальном здоровье
+                    </li>
+                </ul>
+            </div>
+        </div>
 
     <div class="row mb-5">
         <div class="col-lg-6">
@@ -136,7 +136,7 @@
             </div>
         </div>
     </div>
-
+    
     <div class="text-center py-4" style="background-color: #f8f9fa; border-radius: 10px;">
         <h3 class="mb-3">Вопросы или предложения?</h3>
         <p class="mb-4">Свяжитесь с нашей командой поддержки</p>

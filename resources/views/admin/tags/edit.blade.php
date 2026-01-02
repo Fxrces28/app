@@ -52,23 +52,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById('name');
-    const previewTag = document.getElementById('preview-tag');
-    const previewSlug = document.getElementById('preview-slug');
-    
-    nameInput.addEventListener('input', function() {
-        const name = this.value.trim();
-        
-        if (name) {
-            previewTag.textContent = name;
-            previewSlug.textContent = name.toLowerCase()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/--+/g, '-');
-        } else {
-            previewTag.textContent = '{{ $tag->name }}';
-            previewSlug.textContent = '{{ $tag->slug }}';
-        }
-    });
     
     document.querySelector('form').addEventListener('submit', function(e) {
         const newName = nameInput.value.trim();

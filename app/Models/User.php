@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -36,12 +37,10 @@ class User extends Authenticatable
 
     public function hasActiveSubscription(): bool
 {
-    // Проверяем активную подписку
     if ($this->subscription && $this->subscription->is_active && $this->subscription->ends_at > now()) {
         return true;
     }
     
-    // Проверяем активные платежи
     $hasActivePayment = Payment::where('user_id', $this->id)
         ->where('status', 'succeeded')
         ->where('subscription_ends_at', '>', now())
@@ -65,20 +64,46 @@ class User extends Authenticatable
         return $this->role === 'user';
     }
     public function getSubscriptionEndsAt()
-{
-    // Сначала проверяем активную подписку
-    if ($this->subscription && $this->subscription->is_active) {
-        return $this->subscription->ends_at;
+    {
+        if ($this->subscription && $this->subscription->is_active) {
+            return $this->subscription->ends_at;
+        }
+        
+        $payment = Payment::where('user_id', $this->id)
+            ->where('status', 'succeeded')
+            ->where('subscription_ends_at', '>', now())
+            ->latest()
+            ->first();
+            
+        return $payment ? $payment->subscription_ends_at : null;
     }
     
-    // Если нет подписки, проверяем активные платежи
-    $payment = Payment::where('user_id', $this->id)
-        ->where('status', 'succeeded')
-        ->where('subscription_ends_at', '>', now())
-        ->latest()
-        ->first();
-        
-    return $payment ? $payment->subscription_ends_at : null;
-}
-    
+    public function favorites(): BelongsToMany
+    {
+        return $this->belongsToMany(Meditation::class, 'favorites')
+                    ->withTimestamps();
+    }
+
+    public function hasFavorite($meditationId): bool
+    {
+        return $this->favorites()->where('meditation_id', $meditationId)->exists();
+    }
+
+    public function addToFavorites($meditationId): bool
+    {
+        if (!$this->hasFavorite($meditationId)) {
+            $this->favorites()->attach($meditationId);
+            return true;
+        }
+        return false;
+    }
+
+    public function removeFromFavorites($meditationId): bool
+    {
+        if ($this->hasFavorite($meditationId)) {
+            $this->favorites()->detach($meditationId);
+            return true;
+        }
+        return false;
+    }
 }

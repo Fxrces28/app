@@ -21,27 +21,11 @@
                          style="height: 300px; object-fit: cover;">
                 @endif
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h1 class="card-title">{{ $meditation->title }}</h1>
-                            <div class="mb-2">
-                                @if($meditation->is_premium)
-                                    <span class="badge bg-warning">
-                                        <i class="fas fa-crown"></i> Премиум
-                                    </span>
-                                @else
-                                    <span class="badge bg-success">Бесплатно</span>
-                                @endif
-                                <span class="badge bg-info">{{ $meditation->category->name ?? '' }}</span>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="text-muted">
-                                <i class="fas fa-clock"></i> {{ gmdate('i:s', $meditation->duration) }}
-                            </div>
-                            <div class="text-muted">
-                                <i class="fas fa-play"></i> {{ $meditation->play_count }} прослушиваний
-                            </div>
+                    <div class="mb-4">
+                        <h1 class="card-title">{{ $meditation->title }}</h1>
+                        <h5>Описание</h5>
+                        <div class="description-content">
+                            {!! $meditation->description !!}
                         </div>
                     </div>
 
@@ -56,13 +40,6 @@
                                     Ваш браузер не поддерживает аудио элементы.
                                 </audio>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <h5>Описание</h5>
-                        <div class="description-content">
-                            {!! $meditation->description !!}
                         </div>
                     </div>
 
@@ -136,10 +113,29 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Информация</h6>
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Информация</h6>
                 </div>
                 <div class="card-body">
                     <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-tag me-2 text-muted"></i>
+                            Статус: 
+                            @if($meditation->is_premium)
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-crown"></i> Премиум
+                                </span>
+                            @else
+                                <span class="badge bg-success">Бесплатно</span>
+                            @endif
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-clock me-2 text-muted"></i>
+                            Длительность: {{ gmdate('i:s', $meditation->duration) }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-play-circle me-2 text-muted"></i>
+                            Прослушиваний: {{ $meditation->play_count }}
+                        </li>
                         <li class="mb-2">
                             <i class="fas fa-calendar me-2 text-muted"></i>
                             Добавлена: {{ $meditation->created_at->format('d.m.Y') }}
@@ -148,10 +144,26 @@
                             <i class="fas fa-list me-2 text-muted"></i>
                             Категория: {{ $meditation->category->name ?? 'Не указана' }}
                         </li>
-                        <li>
-                            <i class="fas fa-play-circle me-2 text-muted"></i>
-                            Прослушиваний: {{ $meditation->play_count }}
-                        </li>
+                        <br>
+                        <div class="mt-2">
+                            @if(auth()->user()->hasFavorite($meditation))
+                                <button class="btn btn-sm btn-danger remove-favorite-btn" 
+                                        data-meditation-id="{{ $meditation->id }}"
+                                        data-is-favorite="true"
+                                        title="Удалить из избранного">
+                                    <i class="fas fa-heart"></i>
+                                    <span class="ms-1">В избранном</span>
+                                </button>
+                            @else
+                                <button class="btn btn-sm btn-outline-danger add-favorite-btn" 
+                                        data-meditation-id="{{ $meditation->id }}"
+                                        data-is-favorite="false"
+                                        title="Добавить в избранное">
+                                    <i class="far fa-heart"></i>
+                                    <span class="ms-1">В избранное</span>
+                                </button>
+                            @endif
+                        </div>
                     </ul>
                 </div>
             </div>
@@ -159,8 +171,6 @@
     </div>
 </div>
 @endsection
-
-
 
 @section('styles')
 <style>
@@ -188,3 +198,119 @@
 }
 </style>
 @endsection
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const favoritesToggleUrl = "{{ route('favorites.toggle') }}";
+    const csrfToken = "{{ csrf_token() }}";
+    
+    console.log('Favorites script loaded!');
+    
+    function updateButtonState(button, isFavorite) {
+        if (isFavorite) {
+            button.classList.remove('btn-outline-danger', 'add-favorite-btn');
+            button.classList.add('btn-danger', 'remove-favorite-btn');
+            button.innerHTML = '<i class="fas fa-heart"></i> <span class="ms-1">В избранном</span>';
+            button.setAttribute('title', 'Удалить из избранного');
+            button.setAttribute('data-is-favorite', 'true');
+        } else {
+            button.classList.remove('btn-danger', 'remove-favorite-btn');
+            button.classList.add('btn-outline-danger', 'add-favorite-btn');
+            button.innerHTML = '<i class="far fa-heart"></i> <span class="ms-1">В избранное</span>';
+            button.setAttribute('title', 'Добавить в избранное');
+            button.setAttribute('data-is-favorite', 'false');
+        }
+        button.disabled = false;
+    }
+    
+    @auth
+    fetch("{{ route('favorites.list') }}")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Server favorites:', data);
+            if (data.success) {
+                document.querySelectorAll('[data-meditation-id]').forEach(button => {
+                    const meditationId = button.getAttribute('data-meditation-id');
+                    const isFavorite = data.favorites.includes(parseInt(meditationId));
+                    updateButtonState(button, isFavorite);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading favorites:', error));
+    @endauth
+    
+    document.addEventListener('click', async function(e) {
+        let button;
+        
+        if (e.target.closest('.add-favorite-btn')) {
+            button = e.target.closest('.add-favorite-btn');
+        } else if (e.target.closest('.remove-favorite-btn')) {
+            button = e.target.closest('.remove-favorite-btn');
+        } else if (e.target.closest('.favorite-btn')) {
+            button = e.target.closest('.favorite-btn');
+        }
+        
+        if (button) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const meditationId = button.getAttribute('data-meditation-id');
+            const isOnFavoritesPage = window.location.pathname.includes('/favorites');
+            
+            console.log('Toggle favorite:', meditationId);
+            
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(favoritesToggleUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        meditation_id: meditationId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    updateButtonState(button, data.is_favorite);
+                    
+                    if (isOnFavoritesPage && !data.is_favorite) {
+                        const card = button.closest('.col-md-4');
+                        if (card) {
+                            card.remove();
+                            
+                            if (document.querySelectorAll('.col-md-4').length === 0) {
+                                location.reload();
+                            }
+                        }
+                    }
+                } else {
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        }
+    });
+});
+</script>

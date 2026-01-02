@@ -105,4 +105,9 @@ class PublicMeditationController extends Controller
     {
         //
     }
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites')
+                    ->withTimestamps();
+    }
 }

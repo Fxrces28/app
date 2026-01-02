@@ -40,10 +40,10 @@
             <div class="col-md-12 mt-3">
                 <div class="d-flex justify-content-between">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Применить фильтры
+                        Применить фильтры
                     </button>
                     <a href="{{ route('meditations.index') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i> Сбросить
+                        Сбросить
                     </a>
                 </div>
             </div>
@@ -85,6 +85,25 @@
                             <span class="badge bg-success">Бесплатно</span>
                         @endif
                         <span class="badge bg-info">{{ $meditation->category->name ?? '' }}</span>
+                        @auth
+                        <div class="mt-2">
+                            @if(auth()->user()->hasFavorite($meditation))
+                                <button class="btn btn-sm btn-danger remove-favorite-btn" 
+                                        data-meditation-id="{{ $meditation->id }}"
+                                        title="Удалить из избранного">
+                                    <i class="fas fa-heart"></i>
+                                    <span class="ms-1">В избранном</span>
+                                </button>
+                            @else
+                                <button class="btn btn-sm btn-outline-danger add-favorite-btn" 
+                                        data-meditation-id="{{ $meditation->id }}"
+                                        title="Добавить в избранное">
+                                    <i class="far fa-heart"></i>
+                                    <span class="ms-1">В избранное</span>
+                                </button>
+                            @endif
+                        </div>
+                        @endauth
                     </div>
                 </div>
                 <div class="card-footer">
@@ -169,7 +188,154 @@
 @endsection
 
 @section('scripts')
+
 <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const favoritesToggleUrl = "{{ route('favorites.toggle') }}";
+    const csrfToken = "{{ csrf_token() }}";
+    
+    console.log('Favorites script loaded!');
+    
+    function updateButtonState(button, isFavorite) {
+        if (isFavorite) {
+            button.classList.remove('btn-outline-danger', 'add-favorite-btn');
+            button.classList.add('btn-danger', 'remove-favorite-btn');
+            button.innerHTML = '<i class="fas fa-heart"></i> <span class="ms-1">В избранном</span>';
+            button.setAttribute('title', 'Удалить из избранного');
+            button.setAttribute('data-is-favorite', 'true');
+        } else {
+            button.classList.remove('btn-danger', 'remove-favorite-btn');
+            button.classList.add('btn-outline-danger', 'add-favorite-btn');
+            button.innerHTML = '<i class="far fa-heart"></i> <span class="ms-1">В избранное</span>';
+            button.setAttribute('title', 'Добавить в избранное');
+            button.setAttribute('data-is-favorite', 'false');
+        }
+        button.disabled = false;
+    }
+    
+    @auth
+    fetch("{{ route('favorites.list') }}")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Server favorites:', data);
+            if (data.success) {
+                document.querySelectorAll('[data-meditation-id]').forEach(button => {
+                    const meditationId = button.getAttribute('data-meditation-id');
+                    const isFavorite = data.favorites.includes(parseInt(meditationId));
+                    updateButtonState(button, isFavorite);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading favorites:', error));
+    @endauth
+    
+    document.addEventListener('click', async function(e) {
+        let button;
+        
+        if (e.target.closest('.add-favorite-btn')) {
+            button = e.target.closest('.add-favorite-btn');
+        } else if (e.target.closest('.remove-favorite-btn')) {
+            button = e.target.closest('.remove-favorite-btn');
+        } else if (e.target.closest('.favorite-btn')) {
+            button = e.target.closest('.favorite-btn');
+        }
+        
+        if (button) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const meditationId = button.getAttribute('data-meditation-id');
+            const isOnFavoritesPage = window.location.pathname.includes('/favorites');
+            
+            console.log('Toggle favorite:', meditationId);
+            
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(favoritesToggleUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        meditation_id: meditationId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Response:', data);
+                
+                if (data.success) {
+                    updateButtonState(button, data.is_favorite);
+                    
+                    if (isOnFavoritesPage && !data.is_favorite) {
+                        const card = button.closest('.col-md-4');
+                        if (card) {
+                            card.remove();
+                            
+                            if (document.querySelectorAll('.col-md-4').length === 0) {
+                                location.reload();
+                            }
+                        }
+                    }
+                } else {
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        }
+    });
+});
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const premiumModal = document.getElementById('premiumModal');
+    
+    if (premiumModal) {
+        premiumModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const title = button.getAttribute('data-meditation-title');
+            
+            document.getElementById('premiumMeditationTitle').textContent = title;
+        });
+    }
+
+    const categorySelect = document.getElementById('category');
+    const typeSelect = document.getElementById('type');
+    const sortSelect = document.getElementById('sort');
+    
+    function applyFilters() {
+        console.log('Фильтры изменены:', {
+            category: categorySelect.value,
+            type: typeSelect.value,
+            sort: sortSelect.value
+        });
+    }
+    
+    categorySelect?.addEventListener('change', applyFilters);
+    typeSelect?.addEventListener('change', applyFilters);
+    sortSelect?.addEventListener('change', applyFilters);
+});
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const premiumModal = document.getElementById('premiumModal');
     

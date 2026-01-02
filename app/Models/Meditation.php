@@ -43,4 +43,10 @@ class Meditation extends Model
         
         return $user->canAccessPremiumContent();
     }
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorites')
+                    ->withTimestamps();
+    }
 }
