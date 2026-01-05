@@ -19,7 +19,9 @@ require __DIR__.'/auth.php';
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
+if (app()->environment('production') || request()->isSecure()) {
+    \URL::forceScheme('https');
+}
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/about-app', [HomeController::class, 'about'])->name('about.app');
